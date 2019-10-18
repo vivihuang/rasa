@@ -47,7 +47,7 @@ To use these functions it is necessary to create a `Validator` object and initia
 
   import logging
   from rasa import utils
-  from rasa.core.validator import Validator
+  from rasa.validator import Validator
 
   logger = logging.getLogger(__name__)
 

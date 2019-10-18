@@ -94,7 +94,7 @@ def validate_files(args):
     """Validate all files needed for training a model.
 
     Fails with a non-zero exit code if there are any errors in the data."""
-    from rasa.core.validator import Validator
+    from rasa.validator import Validator
     from rasa.importers.rasa import RasaFileImporter
 
     loop = asyncio.get_event_loop()
