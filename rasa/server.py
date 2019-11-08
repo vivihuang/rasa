@@ -984,6 +984,49 @@ def create_app(
                 "header.",
             )
 
+    @app.post("/data/convert")
+    @requires_auth(app, auth_token)
+    async def post_data_convert(request: Request):
+        """Converts current domain in yaml or json format."""
+        validate_request_body(
+            request,
+            "You must provide training data in the request body in order to "
+            "train your model.",
+        )
+        rjs = request.json
+
+        if 'data' not in rjs:
+            raise ErrorResponse(400, "BadRequest", "Must provide training data in 'data' property")
+        if 'output_format' not in rjs or rjs["output_format"] not in ["json", "md"]:
+            raise ErrorResponse(400, "BadRequest", "'output_format' is required and must be either 'md' or 'json")
+        if 'language' not in rjs:
+            raise ErrorResponse(400, "BadRequest", "'language' is required")
+
+        temp_dir = tempfile.mkdtemp()
+        out_dir = tempfile.mkdtemp()
+
+        nlu_data_path = os.path.join(temp_dir, "nlu_data")
+        output_path = os.path.join(out_dir, "output")
+        # botfront: several nlu files
+        if type(rjs["data"] is dict):
+            from rasa.utils.io import dump_obj_as_json_to_file
+            dump_obj_as_json_to_file(nlu_data_path, rjs["data"])
+        else:
+            rasa.utils.io.write_text_file(rjs["stories"], nlu_data_path)
+
+        # botfront end
+        from rasa.nlu.convert import convert_training_data
+        convert_training_data(nlu_data_path, output_path, rjs["output_format"], rjs["language"])
+
+        with open(output_path, encoding='utf-8') as f:
+            data = f.read()
+
+        if rjs["output_format"] == 'json':
+            import json
+            data = json.loads(data, encoding='utf-8')
+
+        return response.json({"data": data})
+
     return app
 
 
